@@ -1,60 +1,92 @@
 import pygame as pg
+import os
 from random import randrange
 
-WINDOW = 800
+# Constants
+WINDOW_SIZE = 800
 TITLE_SIZE = 50
-RANGE = (TITLE_SIZE // 2,WINDOW - TITLE_SIZE // 2, TITLE_SIZE)
-get_random_position = lambda: [randrange(*RANGE), randrange(*RANGE)]
-snake = pg.rect.Rect([0, 0, TITLE_SIZE - 2, TITLE_SIZE -2])
+RANGE = (TITLE_SIZE // 2, WINDOW_SIZE - TITLE_SIZE // 2, TITLE_SIZE)
+TIME_STEP = 110
+BLACK = (0, 0, 0)
+
+# Function to get a random position
+def get_random_position():
+    return [randrange(*RANGE), randrange(*RANGE)]
+
+# Initialize Pygame
+pg.init()
+
+# Set up the display
+screen = pg.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
+pg.display.set_caption("Snake Game")
+
+# Load images
+background_image = pg.image.load(os.path.join('Assets', 'background.png')).convert()
+background_image = pg.transform.scale(background_image, (WINDOW_SIZE, WINDOW_SIZE))
+
+food_image = pg.image.load(os.path.join('Assets', 'insect.png')).convert_alpha()
+food_image = pg.transform.scale(food_image, (TITLE_SIZE, TITLE_SIZE))
+
+# Initialize game variables
+snake = pg.Rect([0, 0, TITLE_SIZE - 2, TITLE_SIZE - 2])
 snake.center = get_random_position()
+
 length = 1
 segments = [snake.copy()]
-snake_dir = (0,0)
-time, time_step = 0, 110
-food = snake.copy()
-food.center = get_random_position()
-screen = pg.display.set_mode([WINDOW] * 2)
+snake_dir = (0, 0)
+time, time_step = 0, TIME_STEP
+
+# Initialize food_rect
+food_rect = snake.copy()
+food_rect.center = get_random_position()
+
 clock = pg.time.Clock()
-dirs = {pg.K_w: 1, pg.K_s: 1, pg.K_a: 1, pg.K_d: 1}
+dirs = {pg.K_w: (0, -TITLE_SIZE), pg.K_s: (0, TITLE_SIZE), pg.K_a: (-TITLE_SIZE, 0), pg.K_d: (TITLE_SIZE, 0)}
 
 while True:
     for event in pg.event.get():
         if event.type == pg.QUIT:
+            pg.quit()
             exit()
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_w and dirs[pg.K_w]:
-                snake_dir = (0, -TITLE_SIZE)
-                dirs = {pg.K_w: 1, pg.K_s: 0, pg.K_a: 1, pg.K_d: 1}
-            if event.key == pg.K_s and dirs[pg.K_s]:
-                snake_dir = (0, TITLE_SIZE)
-                dirs = {pg.K_w: 0, pg.K_s: 1, pg.K_a: 1, pg.K_d: 1}
-            if event.key == pg.K_a and dirs[pg.K_a]:
-                snake_dir = (-TITLE_SIZE, 0)
-                dirs = {pg.K_w: 1, pg.K_s: 1, pg.K_a: 1, pg.K_d: 0}
-            if event.key == pg.K_d and dirs[pg.K_d]:
-                snake_dir = (TITLE_SIZE, 0)
-                dirs = {pg.K_w: 1, pg.K_s: 1, pg.K_a: 0, pg.K_d: 1}
-    screen.fill('black')
-    #check borders and selfeating
+        if event.type == pg.KEYDOWN and event.key in dirs:
+            snake_dir = dirs[event.key]
+
+    screen.fill(BLACK)
+
+    # Draw background image
+    screen.blit(background_image, (0, 0))
+
+    # Check borders and self-eating
     self_eating = pg.Rect.collidelist(snake, segments[:-1]) != -1
-    if snake.left < 0 or snake.right > WINDOW or snake.top < 0 or snake.bottom > WINDOW or self_eating:
-        snake.center, food.center = get_random_position(), get_random_position()
-        length, snake_dir = 1, (0,0)
+    if (
+        snake.left < 0
+        or snake.right > WINDOW_SIZE
+        or snake.top < 0
+        or snake.bottom > WINDOW_SIZE
+        or self_eating
+    ):
+        snake.center, food_rect.center = get_random_position(), get_random_position()
+        length, snake_dir = 1, (0, 0)
         segments = [snake.copy()]
-    #check food position
-    if snake.center == food.center:
-        food.center = get_random_position()
+
+    # Check food position
+    if snake.center == food_rect.center:
+        food_rect.center = get_random_position()
         length += 1
-    #draw food
-    pg.draw.rect(screen, 'red', food)
-    #draw snake
-    [pg.draw.rect(screen, 'green', segment) for segment in segments]
-    #move snake
+
+    # Draw food image
+    screen.blit(food_image, food_rect.topleft)
+
+    # Draw snake
+    [pg.draw.rect(screen, (255, 0, 0), segment) for segment in segments]
+
+    # Move snake
     time_now = pg.time.get_ticks()
-    if time_now -time > time_step:
+    if time_now - time > time_step:
         time = time_now
         snake.move_ip(snake_dir)
         segments.append(snake.copy())
         segments = segments[-length:]
+
     pg.display.flip()
     clock.tick(60)
