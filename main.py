@@ -40,6 +40,10 @@ time, time_step = 0, TIME_STEP
 food_rect = snake.copy()
 food_rect.center = get_random_position()
 
+# Initialize score variables
+score = 0
+font = pg.font.Font(None, 36)  # You can adjust the font size as needed
+
 clock = pg.time.Clock()
 dirs = {pg.K_w: (0, -TITLE_SIZE), pg.K_s: (0, TITLE_SIZE), pg.K_a: (-TITLE_SIZE, 0), pg.K_d: (TITLE_SIZE, 0)}
 
@@ -65,14 +69,16 @@ while True:
         or snake.bottom > WINDOW_SIZE
         or self_eating
     ):
+        # Reset upon losing
         snake.center, food_rect.center = get_random_position(), get_random_position()
-        length, snake_dir = 1, (0, 0)
+        length, snake_dir, score = 1, (0, 0), 0
         segments = [snake.copy()]
 
     # Check food position
     if snake.center == food_rect.center:
         food_rect.center = get_random_position()
         length += 1
+        score += 1
 
     # Draw food image
     screen.blit(food_image, food_rect.topleft)
@@ -87,6 +93,10 @@ while True:
         snake.move_ip(snake_dir)
         segments.append(snake.copy())
         segments = segments[-length:]
+
+    # Draw score on the screen
+    score_text = font.render(f"Score: {score}", True, (255, 255, 255))
+    screen.blit(score_text, (10, 10))
 
     pg.display.flip()
     clock.tick(60)
