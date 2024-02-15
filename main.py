@@ -1,5 +1,6 @@
 import pygame as pg
 import os
+import sys
 from random import randrange
 
 # Constants
@@ -51,7 +52,7 @@ while True:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             pg.quit()
-            exit()
+            sys.exit()
         if event.type == pg.KEYDOWN and event.key in dirs:
             snake_dir = dirs[event.key]
 
