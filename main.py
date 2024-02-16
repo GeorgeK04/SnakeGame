@@ -48,56 +48,70 @@ font = pg.font.Font(None, 36)  # You can adjust the font size as needed
 clock = pg.time.Clock()
 dirs = {pg.K_w: (0, -TITLE_SIZE), pg.K_s: (0, TITLE_SIZE), pg.K_a: (-TITLE_SIZE, 0), pg.K_d: (TITLE_SIZE, 0)}
 
+# Variable for game pause state
+paused = False
+
 while True:
+
     for event in pg.event.get():
         if event.type == pg.QUIT:
             pg.quit()
             sys.exit()
-        if event.type == pg.KEYDOWN and event.key in dirs:
-            snake_dir = dirs[event.key]
+        if event.type == pg.KEYDOWN:
+            if event.key in dirs and not paused:
+                snake_dir = dirs[event.key]
+            elif event.key == pg.K_SPACE:
+                paused = not paused
 
     screen.fill(BLACK)
 
     # Draw background image
     screen.blit(background_image, (0, 0))
 
-    # Check borders and self-eating
-    self_eating = pg.Rect.collidelist(snake, segments[:-1]) != -1
-    if (
-        snake.left < 0
-        or snake.right > WINDOW_SIZE
-        or snake.top < 0
-        or snake.bottom > WINDOW_SIZE
-        or self_eating
-    ):
-        # Reset upon losing
-        snake.center, food_rect.center = get_random_position(), get_random_position()
-        length, snake_dir, score = 1, (0, 0), 0
-        segments = [snake.copy()]
+    if not paused:
+        # Check borders and self-eating
+        self_eating = pg.Rect.collidelist(snake, segments[:-1]) != -1
+        if (
+                snake.left < 0
+                or snake.right > WINDOW_SIZE
+                or snake.top < 0
+                or snake.bottom > WINDOW_SIZE
+                or self_eating
+        ):
+            # Reset upon losing
+            snake.center, food_rect.center = get_random_position(), get_random_position()
+            length, snake_dir, score = 1, (0, 0), 0
+            segments = [snake.copy()]
 
-    # Check food position
-    if snake.center == food_rect.center:
-        food_rect.center = get_random_position()
-        length += 1
-        score += 1
+        # Check food position
+        if snake.center == food_rect.center:
+            food_rect.center = get_random_position()
+            length += 1
+            score += 1
 
-    # Draw food image
-    screen.blit(food_image, food_rect.topleft)
+        # Draw food image
+        screen.blit(food_image, food_rect.topleft)
 
-    # Draw snake
-    [pg.draw.rect(screen, (255, 0, 0), segment) for segment in segments]
+        # Draw snake
+        [pg.draw.rect(screen, (255, 0, 0), segment) for segment in segments]
 
-    # Move snake
-    time_now = pg.time.get_ticks()
-    if time_now - time > time_step:
-        time = time_now
-        snake.move_ip(snake_dir)
-        segments.append(snake.copy())
-        segments = segments[-length:]
+        # Move snake
+        time_now = pg.time.get_ticks()
+        if time_now - time > time_step:
+            time = time_now
+            snake.move_ip(snake_dir)
+            segments.append(snake.copy())
+            segments = segments[-length:]
 
     # Draw score on the screen
     score_text = font.render(f"Score: {score}", True, (255, 255, 255))
     screen.blit(score_text, (10, 10))
+
+    # Draw pause message when paused
+    if paused:
+        pause_font = pg.font.Font(None, 72)
+        pause_text = pause_font.render("Paused", True, (255, 255, 255))
+        screen.blit(pause_text, ((WINDOW_SIZE - pause_text.get_width()) // 2, (WINDOW_SIZE - pause_text.get_height()) // 2))
 
     pg.display.flip()
     clock.tick(60)
